@@ -237,6 +237,49 @@ plt.show()
 
 This includes frequencies from 2 to 30Hz. The baseline interval ranges from -1.5 to -0.5s. To avoid boundary effects, we crop the original time interval (-2 to 6s) to -1.5 to 5.5s. We also set the color range to values from -1 (maximum ERD) to 1.5 (maximum ERS). The `center_cmap` function makes sure that white (the center color in the color map `"RdBu"`) is mapped to the value 0 (neither ERD nor ERS).
 
+### Classifying motor imagery
+In BCI applications, brain activity needs to be classified in real-time. We will try to train a simple classifier on our example data using only two of the three motor imagery conditions, namely left hand versus feet. We will create our feature matrix `X` and label vector `y` from epoched data, this time retaining all channels:
+
+```python
+epochs = mne.Epochs(raw, events, dict(left=2, feet=4), tmin, tmax,
+                    baseline=None, preload=True)
+X = epochs.get_data()
+y = epochs.events[:, 2]
+```
+
+As an instructive example, we will use CSP on bandpass-filtered epochs in combination with a logistic regression classifier. Note that although CSP has been shown to work well with motor imagery data, there are improved methods that might yield better results. Furthermore, we will not tune any (hyper)parameters here, but simply use some default values. Finally, as we could already observe in the ERD/ERS maps, the imagery conditions do not seem to be particularly distinct from each other (but this is not surprising because patterns vary considerably across individuals).
+
+With that out of the way, let's create a pipeline consisting of a bandpass filter (between 8–30 Hz), PCA (which retains the 30 largest components), CSP, and logistic regression. We are going to need the following imports:
+
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.decomposition import PCA
+from mne.decoding import (CSP, FilterEstimator, UnsupervisedSpatialFilter,
+                          cross_val_multiscore)
+```
+
+```python
+clf = make_pipeline(
+    FilterEstimator(epochs.info, 8, 30),
+    UnsupervisedSpatialFilter(PCA(30)),
+    CSP(),
+    LogisticRegression()
+)
+```
+
+Now we can train and evaluate this pipeline in a 10-fold cross-validation scheme:
+
+```python
+scores = cross_val_multiscore(clf, X, y, cv=10)
+```
+
+The array `score` contains the classification accuracy for each fold, and we could compute the mean as follows:
+
+```python
+scores.mean()
+```
+
 ## ERD/ERS analysis with MNELAB
 Alright, let's try to reproduce this workflow with the graphical user interface of MNELAB. Type `mnelab` or `python -m mnelab` in a terminal to start MNELAB.
 
