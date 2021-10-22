@@ -265,3 +265,116 @@ Our next step is to epoch the data. Historically, epoching requires events, but 
 
 ### ERD/ERS maps
 Using these epochs, we can compute ERD/ERS maps by clicking on "Plot" – "ERDS maps...". In the dialog window, we enter 1Hz to 31Hz for the frequency range (step size 1Hz), -1.5s to 5.5s for the time range (because we want to crop 0.5s from the start and end to avoid boundary effects), and -1.5s to -0.5s for the baseline. This creates ERDS maps for each event type (2, 3, and 4 in our case).
+
+## ERP analysis with MNE-Python
+### Loading the data
+This time, our data set is stored in the Brainvision file format, which consists of three files (.eeg, .vhdr, and .vmrk). The .eeg file contains the EEG data, the .vhdr header file contains meta-data such as channel names and sampling frequency, and the .vmrk file contains markers. We will use the function `mne.io.read_raw_brainvision()` to import the data, and we need to pass it the name of the .vhdr file:
+
+```python
+raw = mne.io.read_raw_brainvision("DK_VisualOddball_actiCHamp_slim_5_1_42.vhdr")
+```
+
+### Preprocessing
+Let's take a look at some properties of the data. We can get a quick overview by inspecting the `info` attribute and calling the `describe()` method:
+
+```python
+raw.info
+raw.describe()
+```
+
+We can see that the data consists of 31 EEG channels, and sensor locations have been automatically added (because the `dig` field is populated). We also learn that the data was lowpass-filtered at 140Hz, but apparently no highpass filter was used. The sampling frequency is 500Hz. Let's check out the sensor locations (notice that signals are referenced to Cz, which is not part of the data array and therefore this channel also doesn't show up in the montage plot):
+
+```python
+raw.plot_sensors(show_names=True)
+```
+
+The paradigm is a classic visual oddball paradigm with frequent (the letter "o") and rare (the letter "x") visual stimuli. The task of the participant was to count the infrequent letters "x". This should elicit a P300, which we will try to visualize in this analysis. Corresponding markers should already be available in the `annotations` attribute:
+
+```python
+raw.annotations
+```
+
+Here, "Stimulus/S  1" corresponds to the frequent event "o", whereas "Stimulus/S  2" corresponds to the rare event "x". We do not need the first annotation (which indicates the start of the paradigm), so we delete it:
+
+```python
+raw.annotations.delete(0)
+raw.annotations
+```
+
+Before we epoch the data, let's apply a 0.1 Hz highpass filter to remove slow drifts:
+
+```python
+raw.filter(0.1, None)
+```
+
+In the interest of time, we skip the artifact correction step here, but the continuous data looks pretty nice already:
+
+```python
+raw.plot()
+```
+
+### Epoching
+Next, we'll create epochs from -200 ms to 800 ms relative to stimulus onset. This step also includes baseline correction (the time segment from -200 ms to 0 ms). Epoching requires events, which we need to generate from the existing annotations:
+
+```python
+events, events_id = mne.events_from_annotations(raw)
+```
+
+In addition to `events`, we also get a mapping of annotations names to event types in `events_id`:
+
+```python
+events_id
+```
+
+However, we can take this opportunity to create epochs with more descriptive event names. Instead of passing `events_id` to the `Epochs` initializer, we use the following mapping (knowing that events `1` and `2` map to "Stimulus/S  1" and "Stimulus/S  2", respectively):
+
+```python
+epochs = mne.Epochs(raw, events, dict(o=1, x=2), tmin=-0.2, tmax=0.8, preload=True)
+```
+
+Let's take a look at this object:
+
+```python
+epochs
+```
+
+This looks correct, we have 120 frequent and 30 rare events. Let's plot the epoched data:
+
+```python
+epochs.plot(events=events)
+```
+
+Now we should perform another round of artifact correction and drop epochs with large artifacts. To demonstrate one option how to find such bad epochs automatically, we will drop all epochs that contain signals larger than 150 µV (peak to peak):
+
+```python
+epochs.drop_bad(reject=dict(eeg=150e-6))
+```
+
+### Averaging
+We are now ready to average epochs within the two conditions to compute evoked potentials using the `average()` method on a subset of epochs:
+
+```python
+frequent = epochs["o"].average()
+rare = epochs["x"].average()
+```
+
+There are several plotting methods for these evoked objects, for example:
+
+```python
+frequent.plot(gfp=True)
+rare.plot_joint()
+```
+
+Let's focus on channel Pz and visualize both conditions in one plot:
+
+```python
+mne.viz.plot_compare_evokeds(dict(rare=rare, frequent=frequent), picks="Pz")
+```
+
+This shows a nice P300 for the rare condition. To improve this visualization further, we could add a 95% confidence interval around each evoked time course:
+
+```python
+mne.viz.plot_compare_evokeds(dict(rare=list(epochs["x"].iter_evoked()),
+                                  frequent=list(epochs["o"].iter_evoked())),
+                             picks="Pz")
+```
