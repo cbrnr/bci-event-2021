@@ -23,9 +23,9 @@ If there are outdated packages, you can upgrade each package individually. For e
 ### Packages for EEG analysis
 Now we need to install packages that allow us to perform EEG analysis. We can use `pip install` followed by the package name(s) we would like to install. Specifically, we need the following packages:
 
-    pip install mne mnelab ipython pyxdf
+    pip install mne mnelab pyxdf scikit-learn ipython
 
-Of course, `mne` and `mnelab` are required for MNE-Python and MNELAB. The `ipython` package installs [IPython](https://ipython.org/), an enhanced interactive Python interpreter (which is much more convenient to use than the default `python` interpreter). We also need `pyxdf` to add support for reading XDF files.
+Of course, `mne` and `mnelab` are required for MNE-Python and MNELAB. We also need `pyxdf` to add support for reading XDF files and `scikit-learn` for training a classifier. The `ipython` package installs [IPython](https://ipython.org/), an enhanced interactive Python interpreter (which is much more convenient to use than the default `python` interpreter).
 
 ## Setting up Visual Studio Code
 A good editor is essential for writing Python code. Although you can use your favorite editor, I recommend Visual Studio Code with its Python extension, which is really easy to set up.
