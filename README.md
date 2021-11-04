@@ -314,7 +314,7 @@ Using these epochs, we can compute ERD/ERS maps by clicking on "Plot" – "ERDS 
 This time, our data set is stored in the Brainvision file format, which consists of three files (.eeg, .vhdr, and .vmrk). The .eeg file contains the EEG data, the .vhdr header file contains meta-data such as channel names and sampling frequency, and the .vmrk file contains markers. We will use the function `mne.io.read_raw_brainvision()` to import the data, and we need to pass it the name of the .vhdr file:
 
 ```python
-raw = mne.io.read_raw_brainvision("DK_VisualOddball_actiCHamp_slim_5_1_42.vhdr")
+raw = mne.io.read_raw_brainvision("VisualOddball_BCI2021_AK_01.vhdr")
 ```
 
 ### Preprocessing
@@ -344,9 +344,10 @@ raw.annotations.delete(0)
 raw.annotations
 ```
 
-Before we epoch the data, let's apply a 0.1 Hz highpass filter to remove slow drifts:
+Before we epoch the data, let's apply a 0.1 Hz highpass filter to remove slow drifts. Because MNE does not load the data into memory by default, we need to explicitly do that now (or pass `preload=True` when loading the file):
 
 ```python
+raw.load_data()
 raw.filter(0.1, None)
 ```
 
