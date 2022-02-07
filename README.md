@@ -6,7 +6,7 @@ In this workshop, we will analyze EEG data in Python. We will use [MNE-Python](h
 ### Installing Python
 Installing Python is simple:
 
-- On Windows and macOS, use the official installers from https://www.python.org/ (make sure to add Python to the path).
+- On Windows and macOS, use the [official installers](https://www.python.org/) (make sure to add Python to the path).
 - On Linux, use your package manager (you probably have Python already installed).
 
 ### Managing packages
