@@ -4,8 +4,10 @@ In this workshop, we will analyze EEG data in Python. We will use [MNE-Python](h
 
 ## Setting up Python
 ### Installing Python
-- Windows and macOS: use official installers from https://www.python.org/
-- Linux: use package manager
+Installing Python is simple:
+
+- On Windows and macOS, use the official installers from https://www.python.org/ (make sure to add Python to the path).
+- On Linux, use your package manager (you probably have Python already installed).
 
 ### Managing packages
 This gives us a bare-bones Python environment with hardly any packages installed. We can use the [`pip` command line tool](https://pip.pypa.io/en/stable/) to manage Python packages. Let's find out which packages are currently installed. Open a terminal and enter the following command:
